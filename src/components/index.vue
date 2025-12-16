@@ -51,7 +51,13 @@
           </div>
         </div>
 
-        <div class="message-with-dot">实时状态：{{ item.message }}</div>
+        <div class="message-with-dot" :title="item.message">
+          <template v-for="(part, idx) in splitMessage(item.message)" :key="idx">
+            <span :class="idx === 0 ? 'message-left' : 'message-right'">
+              {{ part }}
+            </span>
+          </template>
+        </div>
 
         <div :style="{ width: '100%' }">
           <a-progress
@@ -349,20 +355,28 @@ export default defineComponent({
       }
     };
 
+    const splitMessage = (message) => {
+      const text = typeof message === "string" ? message.trim() : "";
+      if (!text) return [""];
+
+      const delimiter = text.includes("｜") ? "｜" : text.includes("|") ? "|" : "";
+      if (!delimiter) return [text];
+
+      const [leftPart, ...restParts] = text.split(delimiter);
+      const left = (leftPart ?? "").trim();
+      const right = restParts.join(delimiter).trim();
+
+      return right ? [left, right] : [left];
+    };
+
     // 辅助函数：替换状态文本
     const replaceStopRunning = (text) => {
       if (!text) return text;
       return text
-        .replace("PLUS停运｜", "")
-        .replace("TEAM停运｜", "")
-        .replace("停运｜", "")
-        .replace("|", "-")
-        .replace("|", "-")
-        .replace("PLUS", "Pro")
-        .replace("3.7", "Free")
+        .replace("gemini-3-pro", "")
         .replace("free", "Free")
         .replace("pro", "Pro")
-        .replace("max", "Max")
+        .replace("ultra", "Ultra")
         .replace("green", "#f9bd5f")
         .replace("yellow", "#f9bd5f")
         .replace("red", "#f65e5d")
@@ -444,6 +458,7 @@ export default defineComponent({
       SunnySharp,
       theme,
       redirectTo,
+      splitMessage,
     };
   },
 });
@@ -479,9 +494,28 @@ export default defineComponent({
   position: relative;
   color: #8f8f8f;
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.message-left {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message-right {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
 }
 
 .n-switch {
