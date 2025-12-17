@@ -151,6 +151,24 @@ export default defineComponent({
     const loadingBar = ref(null);
     const statusCache = ref({}); // 状态缓存
 
+    const isSuspendedByColor = (color) => {
+      if (typeof color !== "string") return false;
+      const normalized = color.trim().toLowerCase();
+      return normalized === "red" || normalized.startsWith("#f65e5d");
+    };
+
+    const sortItemsList = () => {
+      itemslist.value = itemslist.value
+        .map((item, idx) => ({ item, idx }))
+        .sort((a, b) => {
+          const aSuspended = isSuspendedByColor(a.item.color);
+          const bSuspended = isSuspendedByColor(b.item.color);
+          if (aSuspended === bSuspended) return a.idx - b.idx; // 稳定排序
+          return aSuspended ? 1 : -1; // 红色(停运)排到后面
+        })
+        .map(({ item }) => item);
+    };
+
     // 数据获取函数 - 修复版本
     const fetchData = async () => {
       if (!hasMoreData.value || isLoading.value) return;
@@ -302,7 +320,7 @@ export default defineComponent({
             }
           }
 
-          const bai = ((statusData.count || 0) / 100).toFixed(2);
+          const bai = ((statusData.count || 0) / 200).toFixed(2);
 
           // 更新的数据
           const updatedData = {
@@ -352,6 +370,7 @@ export default defineComponent({
       if (index !== -1) {
         // 使用对象扩展合并更新
         itemslist.value[index] = { ...itemslist.value[index], ...newData };
+        sortItemsList();
       }
     };
 
